@@ -1,5 +1,6 @@
 // in lib.rs
 pub mod first;
+pub mod second;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
@@ -17,5 +18,5 @@ mod tests {
 }
 
 fn main() {
-    
+
 }
