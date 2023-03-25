@@ -67,6 +67,26 @@ impl<T> Iterator for IntoIter<T> {
     }
 }
 
+pub struct Iter<'a, T> {
+    next: Option<&'a Node<T>>
+}
+
+impl<T> List<T> {
+    pub fn iter<'a>(&'a self) -> Iter<'a, T> {
+        Iter { next: self.head.as_ref().map(|node| node.as_ref()) }
+    }
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|node| {
+            self.next = node.next.as_ref().map(|node| node.as_ref());
+            &node.elem
+        })
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::List;
@@ -130,6 +150,20 @@ mod test {
         assert_eq!(iter.next(), Some(3));
         assert_eq!(iter.next(), Some(2));
         assert_eq!(iter.next(), Some(1));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn iter() {
+        let mut list = List::new();
+        list.push(6);
+        list.push(7);
+        list.push(8);
+
+        let mut iter = list.iter();
+        assert_eq!(iter.next(), Some(&8));
+        assert_eq!(iter.next(), Some(&7));
+        assert_eq!(iter.next(), Some(&6));
         assert_eq!(iter.next(), None);
     }
 }
