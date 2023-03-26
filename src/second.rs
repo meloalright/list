@@ -62,7 +62,7 @@ impl<T> List<T> {
 
 impl<T> Iterator for IntoIter<T> {
     type Item = T;
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(&mut self) -> Option<T> {
         self.0.pop()
     }
 }
@@ -79,7 +79,7 @@ impl<T> List<T> {
 
 impl<'a, T> Iterator for Iter<'a, T> {
     type Item = &'a T;
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(&mut self) -> Option<&'a T> {
         self.next.map(|node| {
             self.next = node.next.as_ref().map(|node| node.as_ref());
             &node.elem
