@@ -102,3 +102,17 @@ fn iter() {
     assert_eq!(iter2.next(), Some(&5));
     assert_eq!(iter.next(), None);
 }
+
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        let mut cur = self.head.take();
+        while let Some(node) = cur {
+            // Rc::Try_unwrap ，该方法会判断当前的 Rc 是否只有一个强引用，若是，则返回 Rc 持有的值，否则返回一个错误。
+            if let Ok(mut node) = Rc::try_unwrap(node) {
+                cur = node.next.take();
+            } else {
+                break;
+            }
+        }
+    }
+}
