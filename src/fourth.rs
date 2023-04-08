@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 
 pub struct List<T> {
     head: Link<T>, // 头指针
@@ -70,6 +70,12 @@ impl<T> List<T> {
             }
         }
     }
+
+    pub fn peek_front(&self) -> Option<Ref<T>> {
+        self.head.as_ref().map(|node| {
+            Ref::map(node.borrow(), |node| &node.elem)
+        })
+    }
 }
 
 #[cfg(test)]
@@ -78,7 +84,7 @@ mod test {
 
     #[test]
     fn basics() {
-        let mut list = List::new();
+        let mut list = List::<i32>::new();
 
         // Check empty list behaves right
         assert_eq!(list.pop_front(), None);
@@ -103,6 +109,18 @@ mod test {
         // Check exhaustion
         assert_eq!(list.pop_front(), Some(1));
         assert_eq!(list.pop_front(), None);
+    }
+
+    #[test]
+    fn test_peek() {
+        let mut list = List::<i32>::new();
+        assert!(list.peek_front().is_none());
+
+        list.push_front(1);
+        list.push_front(2);
+        list.push_front(3);
+
+        assert_eq!(*list.peek_front().unwrap(), 3);
     }
 }
 
