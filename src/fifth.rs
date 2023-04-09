@@ -3,10 +3,10 @@ use std::ptr;
 
 pub struct List<T> {
     head: Link<T>,
-    tail: *mut Node<T> // DANGER DANGER
+    tail: Link<T> // Good
 }
 
-type Link<T> = Option<Box<Node<T>>>;
+type Link<T> = *mut Node<T>;
 
 struct Node<T> {
     elem: T,
@@ -16,35 +16,48 @@ struct Node<T> {
 impl<T> List<T> {
     pub fn new() -> Self {
         List {
-            head: None,
+            head: ptr::null_mut(),
             tail: ptr::null_mut()
         }
     }
 
     pub fn push(&mut self, elem: T) {
-        let mut new_node = Box::new(Node{ elem, next: None });
-        let new_node_ptr: *mut Node<T> = &mut *new_node;
-        if !self.tail.is_null() {
-            unsafe {
-                (*self.tail).next = Some(new_node);
+        unsafe {
+            let mut new_node_ptr = Box::into_raw(Box::new(Node{ elem, next: ptr::null_mut() }));
+            if !self.tail.is_null() {
+                unsafe {
+                    (*self.tail).next = new_node_ptr;
+                }
+            } else {
+                self.head = new_node_ptr;
             }
-        } else {
-            self.head = Some(new_node);
+            self.tail = new_node_ptr;
         }
-        self.tail = new_node_ptr;
     }
 
     pub fn pop(&mut self) -> Option<T> {
-        self.head.take().map(|origin_head| {
-            self.head = origin_head.next;
-            if self.head.is_none() {
-                self.tail = ptr::null_mut();
+        unsafe {
+            if self.head.is_null() {
+                None
+            } else {
+                let head = Box::from_raw(self.head);
+                self.head = head.next;
+                if self.head.is_null() {
+                    self.tail = ptr::null_mut();
+                }
+                Some(head.elem)
             }
-            origin_head.elem
-        })
+        }
     }
 }
 
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        while let Some(_) = self.pop() { }
+    }
+}
+
+#[cfg(test)]
 mod test {
     use super::List;
     #[test]
@@ -73,6 +86,19 @@ mod test {
 
         // Check exhaustion
         assert_eq!(list.pop(), Some(5));
+        assert_eq!(list.pop(), None);
+
+        // Check the exhaustion case fixed the pointer right
+        list.push(6);
+        list.push(7);
+        list.push(8);
+        list.push(9);
+
+        // Check normal removal
+        assert_eq!(list.pop(), Some(6));
+        assert_eq!(list.pop(), Some(7));
+        assert_eq!(list.pop(), Some(8));
+        assert_eq!(list.pop(), Some(9));
         assert_eq!(list.pop(), None);
     }
 }
